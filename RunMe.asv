@@ -1,0 +1,77 @@
+%% Init, set params
+clear; clc; close all;
+CurrDir = pwd;
+datafolder = strcat(CurrDir,'\Data');
+
+% Set data flag to choose whether to run the fMPI or fMRI data through theanalysis:
+data_flag = 'MRI';
+% data_flag = 'MPI';
+
+
+
+
+% % Phantom time-series:
+% flag_no_SPION_decay = 0; flag_no_hemodynamic_tau = 0; flag_FirstPerTransient = 1; ??
+
+% % Rat fMPI: 
+% DataFiles{1} = '\Rat1_set1.mat'; 
+% DataFiles{2} = '\Rat1_set2.mat';
+% DataFiles{3} = '\Rat2_set1.mat'; 
+% DataFiles{4} = '\Rat2_set2.mat';
+% DataFiles{5} = '\Rat3_set1.mat'; 
+% DataFiles{6} = '\Rat3_set2.mat';
+% DataFiles{7} = '\Rat4_set1.mat'; 
+% DataFiles{8} = '\Rat4_set2.mat'; 
+% DataFiles{9} = '\Rat5_set1.mat';  
+% DataFiles{10} = '\Rat5_set2.mat';  
+% flag_no_SPION_decay = 0; flag_no_hemodynamic_tau = 0; flag_FirstPerTransient = 1; coreg_flag = 1; data_use = 'ImageTimeSeries_FiltSmooth';
+
+% % Rat fMRI:
+DataFiles{1} = '\Rat_fMRI_1mm.mat';  
+DataFiles{2} = '\Rat_fMRI_3mm.mat';  
+flag_no_SPION_decay = 1; flag_no_hemodynamic_tau = 0; flag_FirstPerTransient = 1; coreg_flag = 1; data_use = 'ImageTimeSeries_Smooth';
+
+%% Run all
+
+for i = 1:length(DataFiles)
+    clearvars -except i CurrDir datafolder DataFiles flag_no_SPION_decay flag_no_hemodynamic_tau flag_FirstPerTransient coreg_flag data_use Tau1_all Tau2_all DelayTime_all ...
+        Perc_change_ROI CNR_ROI Noise_ROI ConstReg_ROI Gamma_ROI
+
+    %% Load data file:
+    load(strcat(datafolder,DataFiles{i}));
+    if i == 1
+        disp('Loading previously optimized Tau1, Tau2, and Delay Times:');
+    end
+    disp(['Tau1 = ',num2str(Tau1),' sec, Tau2 = ',num2str(Tau2),' sec, Delay Time = ',num2str(DelayTime),' sec']);
+    Tau1_all(i) = Tau1; 
+    if ~flag_no_SPION_decay
+         Tau2_all(i) = Tau2;
+    end
+    DelayTime_all(i) = DelayTime;
+    
+    %% Run regression analysis
+    plot_flag = 1;
+    
+    [p_RS, tDOF_RS, Yhat_RS, ...
+        DriftTerms_All_RS, CNR_RS, ...
+        nHat_RS, Gamma_RS, Noise_RS, ...
+        PercChange_RS, ConstReg_RS, ...
+        CapniaTrigSeries_delay] = RegressionAnalysis(eval(data_use), CapniaTrigSeries, TimeSec0, Tau1, Tau2, DelayTime, plot_flag, flag_no_SPION_decay, flag_no_hemodynamic_tau, flag_FirstPerTransient);
+    
+    %% Subset data in ROI: 
+    Perc_change_ROI(i) = ROIselect(PercChange_RS,ROI,1);
+    CNR_ROI(i) = ROIselect(CNR_RS,ROI,1);
+    Noise_ROI(i) = ROIselect(Noise_RS,ROI,1);
+    ConstReg_ROI(i) = ROIselect(ConstReg_RS,ROI,1);
+    Gamma_ROI(i) = ROIselect(Gamma_RS,ROI,1);
+        
+    %% Plot data
+    rows = length(DataFiles);
+    PlotTimeSeries(eval(data_use), DriftTerms_All_RS, Yhat_RS, ConstReg_RS, CNR_RS, ROI,  TimeSec0, CapniaTrigSeries_delay, conv_kernel_size_voxels, dx, dy, x, y, coreg_flag, coreg, bed_pos, rows, i);
+    
+end
+
+T = table([CNR_ROI,mean(CNR_ROI)]', [Perc_change_ROI,mean(Perc_change_ROI)]', [Gamma_ROI,mean(Gamma_ROI)]', [Noise_ROI,mean(Noise_ROI)]', [ConstReg_ROI,mean(ConstReg_ROI)]',...
+    'VariableNames',["CNR","Percent change [%]","DeltaS [A.U.]","Noise [A.U.]","Constant offset [A.U.]"],...
+    'RowNames',[DataFiles, 'AVG']);
+disp(T);
