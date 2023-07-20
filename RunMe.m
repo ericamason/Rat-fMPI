@@ -3,8 +3,8 @@ clear; clc; close all;
 CurrDir = pwd;
 
 % USER MUST SELECT:
-data_flag = 'MPI';
-% data_flag = 'MRI';
+% data_flag = 'MPI'; flag_plotPSC = 0; 
+data_flag = 'MRI'; flag_plotPSC = 1; 
 
 %% Data selection:
 datafolder = strcat(CurrDir,'\Data');
@@ -32,7 +32,7 @@ end
 %% Run all
 for i = 1:length(DataFiles)
     clearvars -except i CurrDir datafolder DataFiles flag_no_SPION_decay flag_no_hemodynamic_tau flag_FirstPerTransient coreg_flag data_use Tau1_all Tau2_all DelayTime_all ...
-        Perc_change_ROI CNR_ROI Noise_ROI ConstReg_ROI Gamma_ROI
+        Perc_change_ROI CNR_ROI Noise_ROI ConstReg_ROI Gamma_ROI data_flag flag_plotPSC
 
     %% Load data file:
     load(strcat(datafolder,DataFiles{i}));
@@ -55,8 +55,17 @@ for i = 1:length(DataFiles)
         PercChange_RS, ConstReg_RS, ...
         CapniaTrigSeries_delay] = RegressionAnalysis(eval(data_use), CapniaTrigSeries, TimeSec0, Tau1, Tau2, DelayTime, plot_flag, flag_no_SPION_decay, flag_no_hemodynamic_tau, flag_FirstPerTransient);
     
+    %% Choose ROI based on parenchymal segmentation instead of total; for fMRI cases
+    % if strcmp(data_flag,'MRI')
+    %     % PercChange_RS(PercChange_RS>7) = 0;
+    %     [~,ind] = max(PercChange_RS.*parench_mask,[],'all');
+    %     [I1,I2] = ind2sub(size(PercChange_RS),ind);
+    %     ROI(2) = I1; 
+    %     ROI(1) = I2; 
+    % end  
+
     %% Subset data in ROI: 
-    Perc_change_ROI(i) = ROIselect(PercChange_RS,ROI,1);
+    Perc_change_ROI(i) = ROIselect(PercChange_RS,ROI,1);  
     CNR_ROI(i) = ROIselect(CNR_RS,ROI,1);
     Noise_ROI(i) = ROIselect(Noise_RS,ROI,1);
     ConstReg_ROI(i) = ROIselect(ConstReg_RS,ROI,1);
@@ -64,8 +73,9 @@ for i = 1:length(DataFiles)
         
     %% Plot data
     rows = length(DataFiles);
-    PlotTimeSeries(eval(data_use), DriftTerms_All_RS, Yhat_RS, ConstReg_RS, CNR_RS, ROI,  TimeSec0, CapniaTrigSeries_delay, conv_kernel_size_voxels, dx, dy, x, y, coreg_flag, coreg, bed_pos, rows, i);
+    PlotTimeSeries(eval(data_use), DriftTerms_All_RS, Yhat_RS, ConstReg_RS, CNR_RS, ROI,  TimeSec0, CapniaTrigSeries_delay, conv_kernel_size_voxels, dx, dy, x, y, coreg_flag, coreg, bed_pos, rows, i, flag_plotPSC, PercChange_RS, parench_mask);
     
+   
 end
 
 T = table([CNR_ROI,mean(CNR_ROI)]', [Perc_change_ROI,mean(Perc_change_ROI)]', [Gamma_ROI,mean(Gamma_ROI)]', [Noise_ROI,mean(Noise_ROI)]', [ConstReg_ROI,mean(ConstReg_ROI)]',...
