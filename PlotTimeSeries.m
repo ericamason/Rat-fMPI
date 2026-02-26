@@ -131,8 +131,10 @@ if flag_plotPSC
     ax1 = axes; imagesc(ax1, x, y, PSC); set(gca,'YDir','normal'); axis image; colorbar('location','eastoutside', 'FontSize', fs_ticklabels);
     caxis([0 max(PSC,[],'all')])
     % caxis([0 12])
-    outline_parench = edge(parench_mask); 
-    ax2 = axes; imagesc(ax2, x, y, outline_parench,'AlphaData', outline_parench>0); set(gca,'YDir','normal'); axis image; 
+    if exist('parench_mask')
+        outline_parench = edge(parench_mask); 
+        ax2 = axes; imagesc(ax2, x, y, outline_parench,'AlphaData', outline_parench>0); set(gca,'YDir','normal'); axis image; 
+    end
     % cl = caxis; caxis([0,cl(2)]);
 
     % Plot ROI:
@@ -160,8 +162,10 @@ if flag_plotPSC
     figure(203),
     axH = gca; 
     ax1 = axes; imagesc(ax1, x, y, coreg.MRI); set(gca,'YDir','normal'); axis image; colorbar('location','eastoutside', 'FontSize', fs_ticklabels);
-    outline_parench = edge(parench_mask); 
-    ax2 = axes; imagesc(ax2, x, y, outline_parench,'AlphaData', outline_parench>0); set(gca,'YDir','normal'); axis image; 
+    if exist('parench_mask')
+        outline_parench = edge(parench_mask);
+        ax2 = axes; imagesc(ax2, x, y, outline_parench,'AlphaData', outline_parench>0); set(gca,'YDir','normal'); axis image;
+    end
 
     linkprop([axH,ax1,ax2],'Position');  ax2.Visible = 'off'; axH.Visible = 'off'; ax1.XTick = []; ax1.YTick = []; %ax1.Visible = 'off';  ax2.YTick = [];
     colormap(ax1,'gray'); colormap(ax2,'gray');

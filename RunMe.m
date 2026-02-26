@@ -3,8 +3,8 @@ clear; clc; close all;
 CurrDir = pwd;
 
 % USER MUST SELECT:
-% data_flag = 'MPI'; flag_plotPSC = 0; 
-data_flag = 'MRI'; flag_plotPSC = 1; 
+data_flag = 'MPI'; flag_plotPSC = 0; 
+% data_flag = 'MRI'; flag_plotPSC = 1; 
 
 %% Data selection:
 datafolder = strcat(CurrDir,'\Data');
@@ -73,8 +73,11 @@ for i = 1:length(DataFiles)
         
     %% Plot data
     rows = length(DataFiles);
-    PlotTimeSeries(eval(data_use), DriftTerms_All_RS, Yhat_RS, ConstReg_RS, CNR_RS, ROI,  TimeSec0, CapniaTrigSeries_delay, conv_kernel_size_voxels, dx, dy, x, y, coreg_flag, coreg, bed_pos, rows, i, flag_plotPSC, PercChange_RS, parench_mask);
-    
+    if strcmp(data_flag,'MPI')
+            PlotTimeSeries(eval(data_use), DriftTerms_All_RS, Yhat_RS, ConstReg_RS, CNR_RS, ROI,  TimeSec0, CapniaTrigSeries_delay, conv_kernel_size_voxels, dx, dy, x, y, coreg_flag, coreg, bed_pos, rows, i, flag_plotPSC, PercChange_RS,[]);
+    elseif strcmp(data_flag,'MRI')
+            PlotTimeSeries(eval(data_use), DriftTerms_All_RS, Yhat_RS, ConstReg_RS, CNR_RS, ROI,  TimeSec0, CapniaTrigSeries_delay, conv_kernel_size_voxels, dx, dy, x, y, coreg_flag, coreg, bed_pos, rows, i, flag_plotPSC, PercChange_RS, parench_mask);
+    end
    
 end
 
